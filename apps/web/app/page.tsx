@@ -81,11 +81,8 @@ export default function Home() {
             <div key={msg.id} className="message-block">
               <div className="terminal-line">
                 <span className="terminal-prompt">{msg.userId || "anonymous"}@chat:~$</span>
-                <span className="terminal-command">echo "{msg.text}"</span>
-                <span className="terminal-timestamp"># {formatTime(msg.timestamp)}</span>
-              </div>
-              <div className="terminal-line">
                 <span className="terminal-output message-content">{msg.text}</span>
+                <span className="terminal-timestamp"># {formatTime(msg.timestamp)}</span>
               </div>
             </div>
           ))

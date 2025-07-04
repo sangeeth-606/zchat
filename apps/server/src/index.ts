@@ -1,7 +1,10 @@
 import http from 'http';
 import socketService from './services/socket';
+import {startConsumer} from './services/kafka';
 
-// Modern ES2017+ approach with top-level await
+
+startConsumer();
+
 const httpserver = http.createServer();
 const PORT = process.env.PORT || 3005;
 

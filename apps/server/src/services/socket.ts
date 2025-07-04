@@ -1,5 +1,7 @@
 import { Server } from 'socket.io';
 import Redis from 'ioredis';
+import prisma from './prisma';
+import { createProducer, produceMessage } from './kafka';
 
 const pub = new Redis({
     host: 'localhost',
@@ -31,11 +33,13 @@ const createSocketService = () => {
                 console.log(`✅ Subscribed to ${count} channel(s).`);
             });
 
-            sub.on("message", (channel, message) => {
+            sub.on("message", async (channel, message) => {
                 if (channel === "MESSAGES") {
                     try {
                         const data = JSON.parse(message);
                         io.emit('message', data);
+                        await produceMessage(data.text);
+                        console.log('📤 Message published to Kafka:', data.text);
                     } catch (e) {
                         console.error('❌ Failed to parse message:', e);
                     }
