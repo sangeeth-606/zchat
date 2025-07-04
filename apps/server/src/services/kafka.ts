@@ -1,9 +1,21 @@
 import { Kafka, Producer } from 'kafkajs';
 import prisma from './prisma';
+import config from '../config';
 
-const kafka = new Kafka({
-    brokers: ['localhost:9092'] 
-});
+const kafkaConfig: any = {
+    brokers: config.kafka.brokers,
+};
+
+// Add SSL and SASL configuration for production
+if (config.kafka.ssl) {
+    kafkaConfig.ssl = true;
+}
+
+if (config.kafka.sasl) {
+    kafkaConfig.sasl = config.kafka.sasl;
+}
+
+const kafka = new Kafka(kafkaConfig);
 
 let producer: Producer | null = null;
 

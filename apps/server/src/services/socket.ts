@@ -2,15 +2,15 @@ import { Server } from 'socket.io';
 import Redis from 'ioredis';
 import prisma from './prisma';
 import { createProducer, produceMessage } from './kafka';
+import config from '../config';
 
-const pub = new Redis({
-    host: 'localhost',
-    port: 6379,
-});
-const sub = new Redis({
-    host: 'localhost',
-    port: 6379,
-});
+// Create Redis instances based on environment
+const redisConfig = config.redis.url 
+  ? { url: config.redis.url }
+  : { host: config.redis.host, port: config.redis.port };
+
+const pub = new Redis(redisConfig);
+const sub = new Redis(redisConfig);
 
 const createSocketService = () => {
     console.log('SocketService initialized');

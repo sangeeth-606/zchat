@@ -2,6 +2,7 @@
 
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import config from '../config';
 
 type Message = {
     id: string;
@@ -38,7 +39,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     useEffect(() => {
         if (socketRef.current) return;
 
-        const socket = io('http://localhost:3005', {
+        const socket = io(config.server.url, {
             transports: ['websocket', 'polling']
         });
         socketRef.current = socket;
