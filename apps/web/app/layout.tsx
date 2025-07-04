@@ -24,13 +24,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <SocketProvider>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        
+        <SocketProvider>
           {children}
-       
+        </SocketProvider>
       </body>
-       </SocketProvider>
     </html>
   );
 }

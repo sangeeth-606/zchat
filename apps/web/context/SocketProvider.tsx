@@ -3,10 +3,18 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
+type Message = {
+    id: string;
+    text: string;
+    timestamp: Date;
+    userId?: string;
+};
+
 type SocketContextType = {
     sendMessage: (msg: string) => void;
     isConnected: boolean;
     socket: Socket | null;
+    messages: Message[];
 }
 
 interface SocketProviderProps {
@@ -17,54 +25,75 @@ const SocketContext = React.createContext<SocketContextType | null>(null);
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const [isConnected, setIsConnected] = useState(false);
+    const [messages, setMessages] = useState<Message[]>([]);
     const socketRef = useRef<Socket | null>(null);
+    const hasInitialized = useRef(false);
     
     const sendMessage: SocketContextType['sendMessage'] = useCallback((msg: string) => {
         if (socketRef.current && isConnected) {
-            console.log("Sending message:", msg);
             socketRef.current.emit('message', msg);
-        } else {
-            console.log("Socket not connected, cannot send message:", msg);
         }
     }, [isConnected]);
     
     useEffect(() => {
-        console.log("Connecting to socket server...");
+        if (socketRef.current) return;
+
         const socket = io('http://localhost:3005', {
             transports: ['websocket', 'polling']
         });
-        
         socketRef.current = socket;
-        
-        socket.on('connect', () => {
-            console.log('Connected to server with ID:', socket.id);
+
+        const onConnect = () => {
             setIsConnected(true);
-        });
-        
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-            setIsConnected(false);
-        });
-        
-        socket.on('connect_error', (error) => {
-            console.error('Connection error:', error);
-            setIsConnected(false);
-        });
-        
-        socket.on('message', (message) => {
-            console.log('Message received:', message);
-        });
-        
+            socket.emit('get_previous_messages');
+        };
+
+        const onDisconnect = () => setIsConnected(false);
+
+        const onMessage = (message: any) => {
+            const newMessage: Message = {
+                id: message.id || `${Date.now()}_${Math.random()}`,
+                text: message.text || message.message || JSON.stringify(message),
+                timestamp: message.timestamp ? new Date(message.timestamp) : new Date(),
+                userId: message.userId || 'unknown'
+            };
+            setMessages(prev => [...prev, newMessage]);
+        };
+
+        const onPreviousMessages = (previousMessages: any[]) => {
+            if (Array.isArray(previousMessages)) {
+                const formattedMessages: Message[] = previousMessages.map((msg, index) => ({
+                    id: msg.id || `prev_${index}_${Date.now()}`,
+                    text: msg.text || msg.message || JSON.stringify(msg),
+                    timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+                    userId: msg.userId || 'previous'
+                }));
+                setMessages(formattedMessages);
+            }
+        };
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+        socket.on('connect_error', onDisconnect);
+        socket.on('message', onMessage);
+        socket.on('previous_messages', onPreviousMessages);
+
         return () => {
-            console.log("Cleaning up socket connection");
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+            socket.off('connect_error', onDisconnect);
+            socket.off('message', onMessage);
+            socket.off('previous_messages', onPreviousMessages);
             socket.disconnect();
+            socketRef.current = null;
         };
     }, []);
     
     const contextValue: SocketContextType = {
         sendMessage,
         isConnected,
-        socket: socketRef.current
+        socket: socketRef.current,
+        messages
     };
     
     return (

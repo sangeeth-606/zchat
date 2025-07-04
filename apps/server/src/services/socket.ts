@@ -1,4 +1,14 @@
 import { Server } from 'socket.io';
+import Redis from 'ioredis';
+
+const pub = new Redis({
+    host: 'localhost',
+    port: 6379,
+});
+const sub = new Redis({
+    host: 'localhost',
+    port: 6379,
+});
 
 const createSocketService = () => {
     console.log('SocketService initialized');
@@ -13,30 +23,50 @@ const createSocketService = () => {
     return {
         io,
         setupHandlers: () => {
+            sub.subscribe("MESSAGES", (err, count) => {
+                if (err) {
+                    console.error('❌ Redis subscribe error:', err);
+                    return;
+                }
+                console.log(`✅ Subscribed to ${count} channel(s).`);
+            });
+
+            sub.on("message", (channel, message) => {
+                if (channel === "MESSAGES") {
+                    try {
+                        const data = JSON.parse(message);
+                        io.emit('message', data);
+                    } catch (e) {
+                        console.error('❌ Failed to parse message:', e);
+                    }
+                }
+            });
+
             io.on('connection', (socket) => {
                 console.log('🔌 User connected:', socket.id);
                 console.log('📊 Total connected users:', io.sockets.sockets.size);
 
-                socket.on('message', (message) => {
+                socket.on('message', async (message) => {
                     console.log('📨 Message received from', socket.id, ':', message);
-                    // Echo the message back to all connected clients
-                    io.emit('message', {
-                        id: socket.id,
-                        message: message,
-                        timestamp: new Date().toISOString()
-                    });
+                    const messageData = {
+                        id: `${socket.id}-${Date.now()}`,
+                        text: message,
+                        timestamp: new Date(),
+                        userId: socket.id
+                    };
+                    await pub.publish("MESSAGES", JSON.stringify(messageData));
                 });
 
                 socket.on('disconnect', (reason) => {
                     console.log('🔌 User disconnected:', socket.id, 'Reason:', reason);
                     console.log('📊 Total connected users:', io.sockets.sockets.size);
                 });
-                
+
                 socket.on('error', (error) => {
                     console.error('❌ Socket error for', socket.id, ':', error);
                 });
             });
-            
+
             io.on('connect_error', (error) => {
                 console.error('❌ Connection error:', error);
             });
