@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 const isProduction = process.env.IS_PRODUCTION === 'true';
 
 export const config = {
@@ -20,9 +23,11 @@ export const config = {
     brokers: isProduction 
       ? [process.env.KAFKA_BROKER_PROD || ''] 
       : [process.env.KAFKA_BROKER || 'localhost:9092'],
-    ssl: isProduction ? true : false,
+    ssl: isProduction ? {
+      ca: [fs.readFileSync(path.resolve(__dirname, '../../ca.pem'), 'utf8')],
+    } : false,
     sasl: isProduction ? {
-      mechanism: 'plain' as const,
+      mechanism: 'scram-sha-256' as const,
       username: process.env.KAFKA_SASL_USERNAME || '',
       password: process.env.KAFKA_SASL_PASSWORD || '',
     } : undefined,

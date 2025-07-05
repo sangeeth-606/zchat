@@ -8,7 +8,7 @@ const kafkaConfig: any = {
 
 // Add SSL and SASL configuration for production
 if (config.kafka.ssl) {
-    kafkaConfig.ssl = true;
+    kafkaConfig.ssl = config.kafka.ssl;
 }
 
 if (config.kafka.sasl) {
