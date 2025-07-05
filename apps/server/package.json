@@ -5,7 +5,7 @@
     "scripts": {
         "start": "node dist/index",
         "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
-        "build": "tsc -p .",
+        "build": "prisma generate && tsc -p .",
         "lint": "eslint . --max-warnings 0",
         "check-types": "tsc --noEmit"
     },
@@ -20,5 +20,8 @@
         "node-rdkafka": "^3.4.1",
         "socket.io": "^4.8.1",
         "ts-node": "^10.9.2"
+    },
+    "prisma": {
+        "schema": "prisma/schema.prisma"
     }
 }
