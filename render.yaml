@@ -1,11 +1,10 @@
-
 services:
   - type: web
     name: server
     env: node
     plan: free
     autoDeploy: yes
-    buildCommand: "pnpm --filter server build"
+    buildCommand: "pnpm --filter server build && pnpm prisma generate"
     startCommand: "pnpm --filter server start"
     envVars:
       - key: NODE_ENV
