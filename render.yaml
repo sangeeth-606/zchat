@@ -1,0 +1,12 @@
+
+services:
+  - type: web
+    name: server
+    env: node
+    plan: free
+    autoDeploy: yes
+    buildCommand: "pnpm install && pnpm run build"
+    startCommand: "pnpm run start"
+    envVars:
+      - key: NODE_ENV
+        value: production
