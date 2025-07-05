@@ -1,4 +1,4 @@
-# WZchat
+#Zchat
 
 This repository contains a real-time chat application built as a monorepo using pnpm and TurboRepo. It consists of a Next.js frontend, a Node.js backend with Socket.io and Kafka integration, and shared UI components.
 

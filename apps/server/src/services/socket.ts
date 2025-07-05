@@ -81,7 +81,7 @@ const createSocketService = () => {
                             },
                             take: 100, // Limit to last 100 messages for performance
                         });
-                        socket.emit('previous_messages', previousMessages.map(msg => ({
+                        socket.emit('previous_messages', previousMessages.map((msg: { id: string; text: string | null; createdAt: Date; userId: string; }) => ({
                             id: msg.id,
                             text: msg.text,
                             timestamp: msg.createdAt,
