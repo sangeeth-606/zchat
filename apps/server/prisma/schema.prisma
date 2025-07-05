@@ -16,6 +16,7 @@ datasource db {
 model Message {
   id String @id @default(cuid())
   text String?
+  userId String @default("anonymous")
   createdAt DateTime @default(now())
 
   @@map("messages")

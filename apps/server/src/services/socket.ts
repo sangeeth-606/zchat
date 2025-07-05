@@ -50,15 +50,47 @@ const createSocketService = () => {
                 console.log('🔌 User connected:', socket.id);
                 console.log('📊 Total connected users:', io.sockets.sockets.size);
 
-                socket.on('message', async (message) => {
+                socket.on('message', async (message: { text: string, userId: string }) => {
                     console.log('📨 Message received from', socket.id, ':', message);
                     const messageData = {
                         id: `${socket.id}-${Date.now()}`,
-                        text: message,
+                        text: message.text,
                         timestamp: new Date(),
-                        userId: socket.id
+                        userId: message.userId
                     };
+                    // Save message to database
+                    const savedMessage = await prisma.message.create({
+                        data: {
+                            text: messageData.text,
+                            userId: messageData.userId,
+                        },
+                    });
+                    // Use the ID from the saved message for consistency
+                    messageData.id = savedMessage.id;
+                    messageData.timestamp = savedMessage.createdAt;
+
                     await pub.publish("MESSAGES", JSON.stringify(messageData));
+                });
+
+                socket.on('get_previous_messages', async () => {
+                    console.log('📥 Request for previous messages from', socket.id);
+                    try {
+                        const previousMessages = await prisma.message.findMany({
+                            orderBy: {
+                                createdAt: 'asc',
+                            },
+                            take: 100, // Limit to last 100 messages for performance
+                        });
+                        socket.emit('previous_messages', previousMessages.map(msg => ({
+                            id: msg.id,
+                            text: msg.text,
+                            timestamp: msg.createdAt,
+                            userId: msg.userId || 'anonymous', // Ensure userId is always present
+                        })));
+                        console.log(`📤 Sent ${previousMessages.length} previous messages to ${socket.id}`);
+                    } catch (error) {
+                        console.error('❌ Error fetching previous messages:', error);
+                    }
                 });
 
                 socket.on('disconnect', (reason) => {

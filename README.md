@@ -1,135 +1,132 @@
-# Turborepo starter
+# WS-Chat Monorepo
 
-This Turborepo starter is maintained by the Turborepo core team.
+This repository contains a real-time chat application built as a monorepo using pnpm and TurboRepo. It consists of a Next.js frontend, a Node.js backend with Socket.io and Kafka integration, and shared UI components.
 
-## Using this example
+## Project Structure
 
-Run the following command:
+- `apps/server`: The Node.js backend application.
+- `apps/web`: The Next.js frontend application.
+- `packages/ui`: A shared library for UI components.
+- `packages/eslint-config`: Shared ESLint configurations.
+- `packages/typescript-config`: Shared TypeScript configurations.
 
-```sh
-npx create-turbo@latest
-```
+## Technical Stack
 
-## What's inside?
+### Frontend (`apps/web`)
+- **Framework**: Next.js (React)
+- **Styling**: Tailwind CSS
+- **Real-time Communication**: Socket.io Client
+- **Package Manager**: pnpm
 
-This Turborepo includes the following packages/apps:
+### Backend (`apps/server`)
+- **Runtime**: Node.js
+- **Language**: TypeScript
+- **Real-time Communication**: Socket.io
+- **Database ORM**: Prisma
+- **Database**: PostgreSQL (via Prisma)
+- **Message Broker**: Kafka (via `kafkajs`)
+- **Caching/Pub-Sub**: Redis (via `ioredis`)
+- **Package Manager**: pnpm
 
-### Apps and Packages
+### Monorepo Tooling
+- **Monorepo Manager**: pnpm
+- **Build System**: TurboRepo
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## Getting Started
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+To set up the project locally, follow these steps:
 
-### Utilities
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/ws-chat.git
+    cd ws-chat
+    ```
 
-This Turborepo has some additional tools already setup for you:
+2.  **Install pnpm:**
+    If you don't have pnpm installed, you can install it via npm:
+    ```bash
+    npm install -g pnpm
+    ```
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+3.  **Frontend Setup (`apps/web`):
+    *   **Install Dependencies:**
+        ```bash
+        pnpm install
+        ```
+    *   **Set up Environment Variables:**
+        Copy `apps/web/.env.example` to `apps/web/.env` and fill in the required values.
+        **`apps/web/.env` example:**
+        ```
+        NEXT_PUBLIC_SERVER_URL="http://localhost:8000"
+        ```
+    *   **Start Development Server:**
+        ```bash
+        pnpm --filter web dev
+        ```
+        The frontend will typically run on `http://localhost:3000`.
 
-### Build
+4.  **Backend Setup (Docker Compose for `apps/server` and its dependencies):
+    *   **Install Docker and Docker Compose:** Ensure you have Docker and Docker Compose installed on your system.
+    *   **Build and Run Services:** Navigate to the root directory of the monorepo and bring up the services:
+        ```bash
+        docker compose up --build -d
+        ```
+        This will build the `server` image, and start `postgres`, `redis`, `zookeeper`, `kafka`, and `server` containers. Prisma migrations will be automatically applied when the `server` container starts.
+    *   **Verify Services:** You can check the status of your running containers:
+        ```bash
+        docker ps
+        ```
+    *   **Stop Services:** To stop and remove the containers, run from the root of the monorepo:
+        ```bash
+        docker compose down
+        ```
 
-To build all apps and packages, run the following command:
+## Deployment
 
-```
-cd my-turborepo
+This project requires separate deployment strategies for the frontend and backend due to their architectural differences.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+### Frontend Deployment (`apps/web`)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+The Next.js frontend is ideal for deployment on platforms like Vercel.
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+**Steps for Vercel Deployment:**
+1.  **Connect your Git repository** to Vercel.
+2.  **Configure the project root** to `apps/web`.
+3.  **Set environment variables** (e.g., `NEXT_PUBLIC_SERVER_URL` pointing to your deployed backend URL).
+4.  Vercel will automatically detect Next.js and build/deploy your application.
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+### Backend Deployment (`apps/server`)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+The Node.js backend with Socket.io and Kafka requires a platform that supports long-running processes. Recommended platforms include Render, Heroku, DigitalOcean App Platform, or AWS EC2/ECS. You can leverage the `Dockerfile` created for `apps/server` to containerize your backend for deployment.
 
-### Develop
+**General Steps for Containerized Backend Deployment:**
+1.  **Choose a container orchestration platform** (e.g., Kubernetes, Docker Swarm) or a service that supports Docker containers (e.g., Render, DigitalOcean App Platform, AWS ECS/Fargate).
+2.  **Provision managed services** for PostgreSQL, Redis, and Kafka if your chosen platform doesn't provide them directly or if you prefer managed services for production.
+3.  **Build and push the `apps/server` Docker image** to a container registry (e.g., Docker Hub, AWS ECR).
+    ```bash
+    cd apps/server
+    docker build -t your-dockerhub-username/ws-chat-server .
+    docker push your-dockerhub-username/ws-chat-server
+    ```
+4.  **Configure environment variables** in your deployment environment for the `server` container, pointing to your managed database, Redis, and Kafka instances.
+    *   `DATABASE_URL`
+    *   `KAFKA_BROKER_URL`
+    *   `REDIS_URL`
+5.  **Deploy the `server` container** using your platform's deployment mechanisms. Ensure that the container runs the Prisma migrations as part of its startup command (as configured in the `Dockerfile` and `docker-compose.yml` for local development, this is handled by `npx prisma migrate deploy && node dist/index.js`).
+6.  **Ensure network connectivity** between your deployed `server` container and the database, Redis, and Kafka services.
 
-To develop all apps and packages, run the following command:
 
-```
-cd my-turborepo
+## Scripts
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+All scripts can be run from the root of the monorepo using `pnpm run <script-name>`.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+- `pnpm run dev`: Starts development servers for both frontend and backend.
+- `pnpm run build`: Builds both frontend and backend for production.
+- `pnpm run lint`: Runs ESLint across the monorepo.
+- `pnpm run format`: Formats code using Prettier.
+- `pnpm run check-types`: Runs TypeScript type checks across the monorepo.
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Contributing
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+Feel free to contribute to this project. Please ensure your code adheres to the existing style and conventions.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

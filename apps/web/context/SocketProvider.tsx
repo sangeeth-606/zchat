@@ -8,11 +8,11 @@ type Message = {
     id: string;
     text: string;
     timestamp: Date;
-    userId?: string;
+    userId: string;
 };
 
 type SocketContextType = {
-    sendMessage: (msg: string) => void;
+    sendMessage: (msg: string, userId: string) => void;
     isConnected: boolean;
     socket: Socket | null;
     messages: Message[];
@@ -30,9 +30,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const socketRef = useRef<Socket | null>(null);
     const hasInitialized = useRef(false);
     
-    const sendMessage: SocketContextType['sendMessage'] = useCallback((msg: string) => {
+    const sendMessage: SocketContextType['sendMessage'] = useCallback((msg: string, userId: string) => {
         if (socketRef.current && isConnected) {
-            socketRef.current.emit('message', msg);
+            socketRef.current.emit('message', { text: msg, userId });
         }
     }, [isConnected]);
     

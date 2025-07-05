@@ -6,23 +6,47 @@ import { useState, useEffect, useRef } from "react"
 export default function Home() {
   const { sendMessage, isConnected, messages } = useSocket()
   const [message, setMessage] = useState("")
+  const [userName, setUserName] = useState<string | null>(null)
+  const [showNamePrompt, setShowNamePrompt] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Focus input on mount
+  // Focus input on mount or name prompt
   useEffect(() => {
-    inputRef.current?.focus()
+    if (showNamePrompt) {
+      nameInputRef.current?.focus()
+    } else {
+      inputRef.current?.focus()
+    }
+  }, [showNamePrompt])
+
+  // Load username from local storage
+  useEffect(() => {
+    const storedUserName = localStorage.getItem("userName")
+    if (storedUserName) {
+      setUserName(storedUserName)
+    } else {
+      setShowNamePrompt(true)
+    }
   }, [])
 
   const handleSendMessage = () => {
-    if (message.trim()) {
-      sendMessage(message)
+    if (message.trim() && userName) {
+      sendMessage(message, userName)
       setMessage("")
+    }
+  }
+
+  const handleNameSubmit = () => {
+    if (userName && userName.trim()) {
+      localStorage.setItem("userName", userName.trim())
+      setShowNamePrompt(false)
     }
   }
 
@@ -53,65 +77,95 @@ export default function Home() {
 
       {/* Terminal Content */}
       <div className="terminal-content">
-        {/* Welcome Message */}
-        <div className="terminal-line">
-          <span className="terminal-prompt">user@chat:~$</span>
-          <span className="terminal-command">./start-chat.sh</span>
-        </div>
-        <div className="terminal-line">
-          <span className="terminal-output">Starting chat session...</span>
-        </div>
-        <div className="terminal-line">
-          <span className="terminal-output">Connection status: {isConnected ? "ESTABLISHED" : "FAILED"}</span>
-        </div>
-        <div className="terminal-line">
-          <span className="terminal-output">Type your message and press ENTER to send.</span>
-        </div>
-        <div className="terminal-line">
-          <span className="terminal-separator">{"─".repeat(60)}</span>
-        </div>
-
-        {/* Messages */}
-        {messages.length === 0 ? (
-          <div className="terminal-line">
-            <span className="terminal-info"># No messages yet. Start the conversation!</span>
+        {showNamePrompt ? (
+          <div className="name-prompt-overlay">
+            <div className="terminal-line">
+              <span className="terminal-prompt">user@chat:~$</span>
+              <span className="terminal-output">What should we call you?</span>
+            </div>
+            <div className="terminal-line current-line">
+              <span className="terminal-prompt">user@chat:~$</span>
+              <span className="terminal-input-wrapper">
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={userName || ""}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="terminal-input"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleNameSubmit()
+                    }
+                  }}
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+              </span>
+            </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className="message-block">
-              <div className="terminal-line">
-                <span className="terminal-prompt">{msg.userId || "anonymous"}@chat:~$</span>
-                <span className="terminal-output message-content">{msg.text}</span>
-                <span className="terminal-timestamp"># {formatTime(msg.timestamp)}</span>
-              </div>
+          <>
+            {/* Welcome Message */}
+            <div className="terminal-line">
+              <span className="terminal-prompt">user@chat:~$</span>
+              <span className="terminal-command">./start-chat.sh</span>
             </div>
-          ))
+            <div className="terminal-line">
+              <span className="terminal-output">Starting chat session...</span>
+            </div>
+            <div className="terminal-line">
+              <span className="terminal-output">Connection status: {isConnected ? "ESTABLISHED" : "FAILED"}</span>
+            </div>
+            <div className="terminal-line">
+              <span className="terminal-output">Type your message and press ENTER to send.</span>
+            </div>
+            <div className="terminal-line">
+              <span className="terminal-separator">{"─".repeat(60)}</span>
+            </div>
+
+            {/* Messages */}
+            {messages.length === 0 ? (
+              <div className="terminal-line">
+                <span className="terminal-info"># No messages yet. Start the conversation!</span>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id} className="message-block">
+                  <div className="terminal-line">
+                    <span className="terminal-prompt">{msg.userId}@chat:~$</span>
+                    <span className="terminal-output message-content">{msg.text}</span>
+                    <span className="terminal-timestamp"># {formatTime(msg.timestamp)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+
+            <div ref={messagesEndRef} />
+
+            {/* Current Input Line */}
+            <div className="terminal-line current-line">
+              <span className="terminal-prompt">{userName}@chat:~$</span>
+              <span className="terminal-input-wrapper">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="terminal-input"
+                  disabled={!isConnected || !userName}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      handleSendMessage()
+                    }
+                  }}
+                  placeholder={!isConnected ? "Disconnected..." : ""}
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+              </span>
+            </div>
+          </>
         )}
-
-        <div ref={messagesEndRef} />
-
-        {/* Current Input Line */}
-        <div className="terminal-line current-line">
-          <span className="terminal-prompt">user@chat:~$</span>
-          <span className="terminal-input-wrapper">
-            <input
-              ref={inputRef}
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="terminal-input"
-              disabled={!isConnected}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleSendMessage()
-                }
-              }}
-              placeholder={!isConnected ? "Disconnected..." : ""}
-              autoComplete="off"
-              spellCheck="false"
-            />
-          </span>
-        </div>
       </div>
 
       <style jsx>{`
@@ -266,6 +320,36 @@ export default function Home() {
 
         .terminal-input:disabled {
           opacity: 0.5;
+        }
+
+        .name-prompt-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(15, 15, 15, 0.95);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 16px;
+          z-index: 10;
+        }
+
+        .name-prompt-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(15, 15, 15, 0.95);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 16px;
+          z-index: 10;
         }
 
         /* Scrollbar styling */
