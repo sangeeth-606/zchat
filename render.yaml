@@ -5,8 +5,8 @@ services:
     env: node
     plan: free
     autoDeploy: yes
-    buildCommand: "pnpm install && pnpm run build"
-    startCommand: "pnpm run start"
+    buildCommand: "pnpm install --prod && pnpm --filter server build"
+    startCommand: "pnpm --filter server start"
     envVars:
       - key: NODE_ENV
         value: production
