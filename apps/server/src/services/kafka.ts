@@ -1,8 +1,8 @@
-import { Kafka, Producer } from 'kafkajs';
+import { Kafka, Producer, KafkaConfig } from 'kafkajs';
 import prisma from './prisma';
 import config from '../config';
 
-const kafkaConfig: any = {
+const kafkaConfig: KafkaConfig = {
     brokers: config.kafka.brokers,
 };
 
@@ -62,7 +62,7 @@ export async function startConsumer(){
                     }
                 });
             } catch (error) {
-                console.log('Something went wrong');
+                console.log('Something went wrong:', error);
                 pause();
                 setTimeout(() => {
                     consumer.resume([{ topic: 'MESSAGES' }]);

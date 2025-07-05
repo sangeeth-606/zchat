@@ -1,6 +1,19 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "IS_PRODUCTION",
+    "DATABASE_URL",
+    "DATABASE_URL_PROD",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_URL_PROD",
+    "KAFKA_BROKER",
+    "KAFKA_BROKER_PROD",
+    "KAFKA_SASL_USERNAME",
+    "KAFKA_SASL_PASSWORD",
+    "PORT"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

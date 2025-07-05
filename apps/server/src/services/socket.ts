@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 import Redis from 'ioredis';
 import prisma from './prisma';
-import { createProducer, produceMessage } from './kafka';
+import { produceMessage } from './kafka';
 import config from '../config';
 
 // Create Redis instances based on environment
