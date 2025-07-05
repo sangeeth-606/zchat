@@ -24,7 +24,7 @@ export const config = {
       ? [process.env.KAFKA_BROKER_PROD || ''] 
       : [process.env.KAFKA_BROKER || 'localhost:9092'],
     ssl: isProduction ? {
-      ca: [fs.readFileSync(path.resolve(__dirname, '../../ca.pem'), 'utf8')],
+      ca: [fs.readFileSync('/etc/secrets/ca.pem', 'utf8')],
     } : false,
     sasl: isProduction ? {
       mechanism: 'scram-sha-256' as const,
