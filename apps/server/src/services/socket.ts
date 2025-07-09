@@ -5,7 +5,7 @@ import { produceMessage } from './kafka';
 import config from '../config';
 
 // Create Redis instances based on environment
-const redisConfig = config.redis.url && config.redis.url.length > 0
+const redisConfig = config.isProduction
   ? { url: config.redis.url }
   : { host: config.redis.host, port: config.redis.port };
 
