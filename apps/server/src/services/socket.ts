@@ -5,9 +5,12 @@ import { produceMessage } from './kafka';
 import config from '../config';
 
 // Create Redis instances based on environment
-const redisConfig = config.isProduction
-  ? { url: config.redis.url }
-  : { host: config.redis.host, port: config.redis.port };
+console.log('REDIS_URL_PROD:', process.env.REDIS_URL_PROD);
+console.log('IS_PRODUCTION:', process.env.IS_PRODUCTION);
+const redisConfig = process.env.REDIS_URL_PROD && process.env.IS_PRODUCTION === 'true'
+  ? { url: process.env.REDIS_URL_PROD }
+  : { host: process.env.REDIS_HOST || 'localhost', port: parseInt(process.env.REDIS_PORT || '6379') };
+console.log('Redis Config:', redisConfig);
 
 const pub = new Redis(redisConfig);
 const sub = new Redis(redisConfig);

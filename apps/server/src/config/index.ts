@@ -13,9 +13,9 @@ export const config = {
   
   // Redis Configuration
   redis: {
-    host: isProduction ? undefined : process.env.REDIS_HOST || 'localhost',
-    port: isProduction ? undefined : parseInt(process.env.REDIS_PORT || '6379'),
-    url: isProduction ? process.env.REDIS_URL_PROD : "",
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+    url: process.env.REDIS_URL_PROD || undefined,
   },
   
   // Kafka Configuration
